@@ -1,0 +1,22 @@
+
+name: Telemetry Contract
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  telemetry:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Install deps
+        run: python -m pip install --upgrade pip pytest jsonschema
+      - name: Run contract tests
+        run: pytest -q -k "telemetry_contract or anomalies_jsonl or dashboard_endpoints"

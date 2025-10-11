@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: observatory-leader-election
+  namespace: observatory-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: observatory-leader-election
+subjects:
+- kind: ServiceAccount
+  name: observatory-controller
+  namespace: observatory-system
