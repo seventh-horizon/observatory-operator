@@ -1,0 +1,19 @@
+apiVersion: observatory.seventh-horizon.io/v1alpha1
+kind: ObservatoryRun
+metadata:
+  name: simple-workflow
+spec:
+  project: "Getting Started"
+  workflow:
+    tasks:
+      step1:
+        type: shell
+        command: "echo step1 && sleep 2"
+      step2:
+        type: shell
+        command: "echo step2 && sleep 2"
+        dependencies: [step1]
+      step3:
+        type: shell
+        command: "echo step3 && sleep 2"
+        dependencies: [step2]

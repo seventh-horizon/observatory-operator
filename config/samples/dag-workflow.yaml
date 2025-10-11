@@ -1,0 +1,21 @@
+apiVersion: observatory.seventh-horizon.io/v1alpha1
+kind: ObservatoryRun
+metadata:
+  name: data-pipeline
+spec:
+  project: "Analytics ETL"
+  workflow:
+    tasks:
+      extract-users:
+        command: "echo extracting users && sleep 3"
+      extract-events:
+        command: "echo extracting events && sleep 3"
+      join-data:
+        command: "echo join && sleep 3"
+        dependencies: [extract-users, extract-events]
+      aggregate:
+        command: "echo aggregate && sleep 2"
+        dependencies: [join-data]
+      report:
+        command: "echo report && sleep 1"
+        dependencies: [aggregate]

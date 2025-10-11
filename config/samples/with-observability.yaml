@@ -1,0 +1,15 @@
+apiVersion: observatory.seventh-horizon.io/v1alpha1
+kind: ObservatoryRun
+metadata:
+  name: traced-workflow
+spec:
+  project: "Tracing"
+  observability:
+    otel:
+      enabled: true
+      attributes:
+        app: observatory
+  workflow:
+    tasks:
+      traced:
+        command: "echo trace && sleep 2"

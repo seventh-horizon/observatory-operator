@@ -1,0 +1,14 @@
+apiVersion: observatory.seventh-horizon.io/v1alpha1
+kind: ObservatoryRun
+metadata:
+  name: invalid-circular
+spec:
+  project: "Invalid"
+  workflow:
+    tasks:
+      A:
+        command: "echo A"
+        dependencies: [B]
+      B:
+        command: "echo B"
+        dependencies: [A]

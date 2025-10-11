@@ -1,0 +1,13 @@
+# Go / Python / OS cruft
+bin/
+dist/
+build/
+__pycache__/
+*.pyc
+*.log
+.DS_Store
+# Obsidian cache if this ever becomes a vault
+.obsidian/workspace.json
+.trash/
+# Archives (we already extracted contents)
+*.zip

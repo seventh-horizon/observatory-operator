@@ -1,0 +1,8 @@
+
+# Append to Makefile
+.PHONY: telemetry notify
+telemetry:
+	pytest -q -k "telemetry_contract or anomalies_jsonl or dashboard_endpoints"
+
+notify:
+	SLACK_WEBHOOK="$(SLACK_WEBHOOK)" REPORT_URL="$(REPORT_URL)" ANOMALY_OUT="$(ANOMALY_OUT)" nox -s notify

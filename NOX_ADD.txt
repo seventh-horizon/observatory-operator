@@ -1,0 +1,20 @@
+
+# Paste into noxfile.py
+import os, shlex
+
+@nox.session(python=["3.12"])
+def telemetry(session):
+    session.install("pytest","jsonschema")
+    session.run("pytest","-q","-k","telemetry_contract or anomalies_jsonl or dashboard_endpoints")
+
+@nox.session(python=["3.12"])
+def notify(session):
+    # thin wrapper: render trend + html, then (optional) Slack
+    env = {
+      "SLACK_WEBHOOK": os.environ.get("SLACK_WEBHOOK",""),
+      "REPORT_URL": os.environ.get("REPORT_URL",""),
+      "ANOMALY_OUT": os.environ.get("ANOMALY_OUT","out/anomalies.jsonl"),
+    }
+    exports = " ".join(f'{k}={shlex.quote(v)}' for k,v in env.items())
+    session.run("bash","-lc", f"{exports} python scripts/plot-verify-trend.py || true")
+    session.run("bash","-lc", "python scripts/report-verify.py || true")
