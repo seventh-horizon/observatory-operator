@@ -16,3 +16,4 @@ __pycache__/
 # allow release artifacts in dist/
 !dist/*.zip
 !dist/*.sha256
+*.zip
