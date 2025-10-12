@@ -19,16 +19,21 @@ jobs:
           pip install -r requirements.txt || true
           pip install pytest jsonschema
 
-      - name: Run tests
-        run: pytest -q
+          - name: Run tests
+      run: pytest -q
 
-      - name: Upload sample artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: verify-samples
-          path: |
-            out/verify_stats.csv
-            out/verify_stats.sample.json
-            out/anomalies.jsonl
-          if-no-files-found: ignore
+    - name: Generate sample artifacts
+      run: |
+        export SOURCE_DATE_EPOCH=0
+        python tools/generate_samples.py
+
+    - name: Upload sample artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: verify-samples
+        path: |
+          out/verify_stats.csv
+          out/verify_stats.sample.json
+          out/anomalies.jsonl
+        if-no-files-found: ignore
