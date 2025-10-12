@@ -11,3 +11,4 @@ __pycache__/
 .trash/
 # Archives (we already extracted contents)
 *.zip
+.venv/
