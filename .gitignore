@@ -12,3 +12,7 @@ __pycache__/
 # Archives (we already extracted contents)
 *.zip
 .venv/
+
+# allow release artifacts in dist/
+!dist/*.zip
+!dist/*.sha256
