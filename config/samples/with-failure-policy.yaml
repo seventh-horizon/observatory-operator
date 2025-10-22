@@ -1,0 +1,18 @@
+apiVersion: observatory.seventh-horizon.io/v1alpha1
+kind: ObservatoryRun
+metadata:
+  name: fp-stop-demo
+  namespace: observatory-system
+spec:
+  project: demo
+  workflow:
+    failurePolicy: Stop
+    tasks:
+      a:
+        image: busybox
+        command: "exit 1"        # <- this will FAIL immediately
+        retries: 0               # <- no retries; fail fast
+      b:
+        image: busybox
+        command: "echo should NOT run"
+        dependencies: [a]

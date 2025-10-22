@@ -1,11 +1,13 @@
 apiVersion: observatory.seventh-horizon.io/v1alpha1
 kind: ObservatoryRun
 metadata:
-  name: retry-workflow
+  name: retry-demo
+  namespace: observatory-system
 spec:
-  project: "Resilience"
+  project: demo
   workflow:
     tasks:
-      sometimes-flaky:
-        command: "sh -c 'n=$((RANDOM % 2)); if [ $n -eq 0 ]; then echo ok; else echo fail && exit 1; fi'"
-        retries: 4
+      a:
+        image: busybox
+        command: "false"
+        retries: 10

@@ -8,6 +8,6 @@ roleRef:
   kind: Role
   name: observatory-leader-election
 subjects:
-- kind: ServiceAccount
-  name: observatory-controller
-  namespace: observatory-system
+  - kind: ServiceAccount
+    name: observatory-controller
+    namespace: observatory-system

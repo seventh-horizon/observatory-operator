@@ -1,0 +1,13 @@
+# config/samples/ok-minimal.yaml
+apiVersion: observatory.seventh-horizon.io/v1alpha1
+kind: ObservatoryRun
+metadata:
+  name: ok-minimal
+  namespace: observatory-system
+spec:
+  project: demo
+  workflow:
+    tasks:
+      a:
+        image: busybox
+        command: "sh -c 'echo hello && exit 0'"

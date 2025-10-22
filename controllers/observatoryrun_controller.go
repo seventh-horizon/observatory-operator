@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	observatoryv1alpha1 "github.com/example/observatory-operator/api/v1alpha1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -16,7 +17,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/record"
 )
 
 const (
@@ -27,8 +27,6 @@ const (
 type ObservatoryRunReconciler struct {
 	client.Client
 	Scheme   *runtime.Scheme
-	Recorder record.EventRecorder
-	Log      ctrl.Logger
 }
 
 func (r *ObservatoryRunReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -51,6 +49,9 @@ func (r *ObservatoryRunReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		if err := r.Update(ctx, &run); err != nil { return ctrl.Result{}, err }
 	}
 
+	// Create a deep copy to patch from (must be BEFORE any status mutations)
+	orig := run.DeepCopy()
+
 	if err := r.collectJobStatuses(ctx, &run); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -62,9 +63,16 @@ func (r *ObservatoryRunReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 	}
 
+	// Update the phase or other fields in status
 	run.Status.Phase = r.derivePhase(&run)
-	if err := r.Status().Update(ctx, &run); err != nil {
-		logger.Error(err, "status update failed")
+
+	// Apply a merge patch to avoid resourceVersion conflicts
+	if err := r.Status().Patch(ctx, &run, client.MergeFrom(orig)); err != nil {
+		if apierrors.IsConflict(err) {
+			// Retry later; object was modified concurrently
+			return ctrl.Result{RequeueAfter: 500 * time.Millisecond}, nil
+		}
+		logger.Error(err, "status patch failed")
 		return ctrl.Result{}, err
 	}
 
@@ -76,61 +84,161 @@ func (r *ObservatoryRunReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 }
 
 func (r *ObservatoryRunReconciler) collectJobStatuses(ctx context.Context, run *observatoryv1alpha1.ObservatoryRun) error {
+	// Defensive: ensure the status map always exists (guards against nil map on fresh objects or concurrent updates)
+	if run.Status.TaskStatuses == nil {
+		run.Status.TaskStatuses = map[string]*observatoryv1alpha1.TaskStatus{}
+	}
 	var jobs batchv1.JobList
 	if err := r.List(ctx, &jobs, client.InNamespace(run.Namespace), client.MatchingLabels{labelRun: run.Name}); err != nil {
 		return err
 	}
+	// Initialize all declared tasks to Pending unless overwritten by observed Jobs
 	for name := range run.Spec.Workflow.Tasks {
-		js := &observatoryv1alpha1.TaskStatus{State: observatoryv1alpha1.TaskPending}
-		run.Status.TaskStatuses[name] = js
+		if run.Status.TaskStatuses[name] == nil {
+			run.Status.TaskStatuses[name] = &observatoryv1alpha1.TaskStatus{State: observatoryv1alpha1.TaskPending}
+		}
 	}
 	for _, j := range jobs.Items {
 		name := strings.TrimPrefix(j.Name, run.Name+"-")
 		st := run.Status.TaskStatuses[name]
-		if st == nil { st = &observatoryv1alpha1.TaskStatus{}; run.Status.TaskStatuses[name]=st }
+		if st == nil {
+			st = &observatoryv1alpha1.TaskStatus{}
+			run.Status.TaskStatuses[name] = st
+		}
 		st.JobName = j.Name
-		if j.Status.Succeeded > 0 { st.State = observatoryv1alpha1.TaskSucceeded
-		} else if j.Status.Failed > 0 { st.State = observatoryv1alpha1.TaskFailed
-		} else if j.Status.Active > 0 { st.State = observatoryv1alpha1.TaskRunning
-		} else { st.State = observatoryv1alpha1.TaskPending }
+
+		// Derive human-friendly status message helpers
+		started := ""
+		if j.Status.StartTime != nil {
+			started = j.Status.StartTime.Time.UTC().Format(time.RFC3339)
+		}
+
+		switch {
+		case j.Status.Succeeded > 0:
+			st.State = observatoryv1alpha1.TaskSucceeded
+			if j.Status.CompletionTime != nil && j.Status.StartTime != nil {
+				dur := j.Status.CompletionTime.Sub(j.Status.StartTime.Time).Round(time.Second)
+				st.Message = fmt.Sprintf("Completed successfully in %s", dur)
+			} else {
+				st.Message = "Completed successfully"
+			}
+
+		case j.Status.Failed > 0:
+			if j.Spec.BackoffLimit != nil && j.Status.Failed < *j.Spec.BackoffLimit {
+				// Retry still allowed: present as Pending so computeFrontier can pick it back up
+				st.State = observatoryv1alpha1.TaskPending
+				st.Message = fmt.Sprintf("Failed %d/%d times, retrying", j.Status.Failed, *j.Spec.BackoffLimit)
+			} else {
+				st.State = observatoryv1alpha1.TaskFailed
+				if j.Spec.BackoffLimit != nil {
+					st.Message = fmt.Sprintf("Failed after %d/%d attempts", j.Status.Failed, *j.Spec.BackoffLimit)
+				} else {
+					st.Message = fmt.Sprintf("Failed after %d attempts", j.Status.Failed)
+				}
+			}
+
+		case j.Status.Active > 0:
+			st.State = observatoryv1alpha1.TaskRunning
+			if started != "" {
+				st.Message = fmt.Sprintf("Started at %s", started)
+			} else {
+				st.Message = "Running"
+			}
+
+		default:
+			if st.State == "" {
+				st.State = observatoryv1alpha1.TaskPending
+			}
+			if st.Message == "" {
+				st.Message = "Waiting for dependencies"
+			}
+		}
 	}
 	return nil
 }
 
 func (r *ObservatoryRunReconciler) computeFrontier(run *observatoryv1alpha1.ObservatoryRun) []string {
+	// If FailurePolicy is Stop and any task has failed, block scheduling new tasks
+	if strings.EqualFold(run.Spec.Workflow.FailurePolicy, "Stop") {
+		for _, st := range run.Status.TaskStatuses {
+			if st != nil && st.State == observatoryv1alpha1.TaskFailed {
+				return []string{}
+			}
+		}
+	}
+
 	ready := []string{}
 	for name, spec := range run.Spec.Workflow.Tasks {
 		st := run.Status.TaskStatuses[name]
+		// Skip if already running or completed
 		if st != nil && (st.State == observatoryv1alpha1.TaskRunning || st.State == observatoryv1alpha1.TaskSucceeded) {
 			continue
 		}
+		// All dependencies must have succeeded
 		depsOK := true
 		for _, d := range spec.Dependencies {
 			dst := run.Status.TaskStatuses[d]
 			if dst == nil || dst.State != observatoryv1alpha1.TaskSucceeded {
-				depsOK = false; break
+				depsOK = false
+				break
 			}
 		}
-		if depsOK { ready = append(ready, name) }
+		if depsOK {
+			ready = append(ready, name)
+		}
 	}
 	return ready
 }
 
 func (r *ObservatoryRunReconciler) derivePhase(run *observatoryv1alpha1.ObservatoryRun) observatoryv1alpha1.Phase {
-	succeeded, failed, total := 0, 0, len(run.Spec.Workflow.Tasks)
-	for n := range run.Spec.Workflow.Tasks {
-		st := run.Status.TaskStatuses[n]
-		if st == nil { continue }
-		if st.State == observatoryv1alpha1.TaskFailed { failed++ }
-		if st.State == observatoryv1alpha1.TaskSucceeded { succeeded++ }
+	// Aggregate task states
+	succeeded := 0
+	failed := 0
+	running := 0
+	pending := 0
+	total := len(run.Spec.Workflow.Tasks)
+
+	for name := range run.Spec.Workflow.Tasks {
+		st := run.Status.TaskStatuses[name]
+		if st == nil {
+			pending++
+			continue
+		}
+		switch st.State {
+		case observatoryv1alpha1.TaskSucceeded:
+			succeeded++
+		case observatoryv1alpha1.TaskFailed:
+			failed++
+		case observatoryv1alpha1.TaskRunning:
+			running++
+		default:
+			pending++
+		}
 	}
-	if failed > 0 { return observatoryv1alpha1.PhaseFailed }
-	if succeeded == total && total > 0 { return observatoryv1alpha1.PhaseSucceeded }
-	if succeeded > 0 { return observatoryv1alpha1.PhaseRunning }
+
+	// Any failure flips the whole run to Failed (fail-fast semantics for the run overall)
+	if failed > 0 {
+		return observatoryv1alpha1.PhaseFailed
+	}
+
+	// All tasks succeeded
+	if total > 0 && succeeded == total {
+		return observatoryv1alpha1.PhaseSucceeded
+	}
+
+	// If at least one task has started (Running or Succeeded) or there are active Jobs,
+	// the run is considered Running. This covers the case where some tasks are still
+	// Pending due to dependencies while others have started.
+	if running > 0 || succeeded > 0 {
+		return observatoryv1alpha1.PhaseRunning
+	}
+
+	// Otherwise nothing has started yet
 	return observatoryv1alpha1.PhasePending
 }
 
 func (r *ObservatoryRunReconciler) ensureJob(ctx context.Context, run *observatoryv1alpha1.ObservatoryRun, task string) error {
+	logger := log.FromContext(ctx)
 	jobName := fmt.Sprintf("%s-%s", run.Name, task)
 	var existing batchv1.Job
 	if err := r.Get(ctx, types.NamespacedName{Name: jobName, Namespace: run.Namespace}, &existing); err == nil {
@@ -149,6 +257,7 @@ func (r *ObservatoryRunReconciler) ensureJob(ctx context.Context, run *observato
 			Labels: map[string]string{labelRun: run.Name},
 		},
 		Spec: batchv1.JobSpec{
+			BackoffLimit: spec.Retries,
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
 					RestartPolicy: corev1.RestartPolicyNever,
@@ -164,7 +273,7 @@ func (r *ObservatoryRunReconciler) ensureJob(ctx context.Context, run *observato
 
 	if err := controllerutil.SetControllerReference(run, job, r.Scheme); err != nil { return err }
 	if err := r.Create(ctx, job); err != nil { return err }
-	r.Recorder.Event(run, "Normal", "JobCreated", fmt.Sprintf("Created Job %s", jobName))
+	logger.Info("Created Job", "job", jobName, "task", task)
 	return nil
 }
 

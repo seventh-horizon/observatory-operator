@@ -1,23 +1,27 @@
-
 # Meta Observability Contract
 
 This document pinches the runtime telemetry invariants for long-term stability.
 
-## verify_stats*.json
+## verify_stats\*.json
+
 - `timestamp`: ISO8601 UTC with trailing `Z`
 - `certs`, `ok`, `fails`, `elapsed`: integers (seconds)
 - Optional: `req`
 
 ## CSV Row
+
 Header (exact): `timestamp,certs,ok,fails,elapsed`
 
 ## anomalies.jsonl lines
+
 Each line:
+
 ```json
-{"timestamp":"...Z","elapsed":14,"median":12,"factor":1.2}
+{ "timestamp": "...Z", "elapsed": 14, "median": 12, "factor": 1.2 }
 ```
 
 ## Dashboard `/data.json` shape (minimum)
+
 ```json
 {
   "generated_at":"...Z",

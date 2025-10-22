@@ -4,6 +4,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// +kubebuilder:object:generate=true
 type TaskSpec struct {
 	Type         string   `json:"type,omitempty"`
 	Image        string   `json:"image,omitempty"`
@@ -13,32 +14,43 @@ type TaskSpec struct {
 	Retries      *int32   `json:"retries,omitempty"`
 }
 
+// +kubebuilder:object:generate=true
 type WorkflowSpec struct {
-	Tasks map[string]TaskSpec `json:"tasks,omitempty"`
+	Tasks         map[string]TaskSpec `json:"tasks,omitempty"`
+	FailurePolicy string              `json:"failurePolicy,omitempty"` // "Continue" (default) or "Stop"
 }
 
+// Back-compat alias: tests and older code expect 'Workflow'.
+// This does not affect CRD generation; it's a Go alias only.
+type Workflow = WorkflowSpec
+
+// +kubebuilder:object:generate=true
 type ResourcesSpec struct {
 	Requests map[string]string `json:"requests,omitempty"`
 	Limits   map[string]string `json:"limits,omitempty"`
 }
 
+// +kubebuilder:object:generate=true
 type ObservabilitySpec struct {
 	OTel *OTelSpec `json:"otel,omitempty"`
 }
 
+// +kubebuilder:object:generate=true
 type OTelSpec struct {
 	Enabled    bool              `json:"enabled,omitempty"`
 	Attributes map[string]string `json:"attributes,omitempty"`
 }
 
+// +kubebuilder:object:generate=true
 type ObservatoryRunSpec struct {
-	Project       string           `json:"project,omitempty"`
-	Workflow      WorkflowSpec     `json:"workflow"`
-	Resources     *ResourcesSpec   `json:"resources,omitempty"`
+	Project       string            `json:"project,omitempty"`
+	Workflow      WorkflowSpec      `json:"workflow"`
+	Resources     *ResourcesSpec    `json:"resources,omitempty"`
 	Observability *ObservabilitySpec `json:"observability,omitempty"`
 }
 
 type TaskState string
+
 const (
 	TaskPending   TaskState = "Pending"
 	TaskRunning   TaskState = "Running"
@@ -46,6 +58,7 @@ const (
 	TaskFailed    TaskState = "Failed"
 )
 
+// +kubebuilder:object:generate=true
 type TaskStatus struct {
 	State   TaskState `json:"state,omitempty"`
 	JobName string    `json:"jobName,omitempty"`
@@ -53,6 +66,7 @@ type TaskStatus struct {
 }
 
 type Phase string
+
 const (
 	PhasePending   Phase = "Pending"
 	PhaseRunning   Phase = "Running"
@@ -60,6 +74,7 @@ const (
 	PhaseFailed    Phase = "Failed"
 )
 
+// +kubebuilder:object:generate=true
 type ObservatoryRunStatus struct {
 	Phase        Phase                 `json:"phase,omitempty"`
 	TaskStatuses map[string]*TaskStatus `json:"taskStatuses,omitempty"`

@@ -7,6 +7,6 @@ roleRef:
   kind: ClusterRole
   name: observatory-controller
 subjects:
-- kind: ServiceAccount
-  name: observatory-controller
-  namespace: observatory-system
+  - kind: ServiceAccount
+    name: observatory-controller
+    namespace: observatory-system

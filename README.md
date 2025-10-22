@@ -1,6 +1,7 @@
 # Observatory Operator (Starter, with Webhook + Controller)
 
 A minimal-but-functional Kubernetes operator that runs simple DAG-based workflows by creating Kubernetes Jobs per task. Includes:
+
 - ✅ Validating admission webhook (cycle detection, dependency checks, sane warnings)
 - ✅ Idempotent controller that creates Jobs and tracks status
 - ✅ Samples (sequential, DAG)
@@ -27,6 +28,7 @@ make deploy IMG=observatory-operator:latest
 ```
 
 Run an example:
+
 ```bash
 make run-example-simple
 kubectl get observatoryruns -w

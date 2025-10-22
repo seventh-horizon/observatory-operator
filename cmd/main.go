@@ -3,17 +3,16 @@ package main
 import (
 	"flag"
 	"os"
-	"time"
 
 	observatoryv1alpha1 "github.com/example/observatory-operator/api/v1alpha1"
-	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server" // ADDED ALIAS
+	"sigs.k8s.io/controller-runtime/pkg/webhook"                      // ADDED IMPORT
 
 	"github.com/example/observatory-operator/controllers"
 )
@@ -43,13 +42,15 @@ func main() {
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
+		Scheme: scheme,
+		// FIXED MetricsBindAddress:
+		Metrics: metricsserver.Options{BindAddress: metricsAddr},
+		// FIXED Port:
+		WebhookServer:          webhook.NewServer(webhook.Options{Port: 9443}),
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "observatory-operator.seventh-horizon.io",
-		Client:                 controller_runtime_client(),
+		// REMOVED Client: ... line
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
@@ -59,8 +60,8 @@ func main() {
 	if err = (&controllers.ObservatoryRunReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("observatory-controller"),
-		Log: ctrl.Log.WithName("controller").WithName("observatoryrun"),
+		// REMOVED Recorder: ... line
+		// REMOVED Log: ... line
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ObservatoryRun")
 		os.Exit(1)
@@ -87,7 +88,4 @@ func main() {
 	}
 }
 
-// stub for potential client options; keeps compile simple
-func controller_runtime_client() controller_runtime.ClientOptions {
-	return controller_runtime.ClientOptions{CacheSyncTimeout: 30 * time.Second}
-}
+// REMOVED entire controller_runtime_client() function

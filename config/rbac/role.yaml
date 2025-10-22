@@ -3,15 +3,20 @@ kind: ClusterRole
 metadata:
   name: observatory-controller
 rules:
-- apiGroups: ["observatory.seventh-horizon.io"]
-  resources: ["observatoryruns", "observatoryruns/status", "observatoryruns/finalizers"]
-  verbs: ["get","list","watch","create","update","patch","delete"]
-- apiGroups: ["batch"]
-  resources: ["jobs"]
-  verbs: ["get","list","watch","create","update","patch","delete"]
-- apiGroups: [""]
-  resources: ["events"]
-  verbs: ["create","patch"]
-- apiGroups: ["coordination.k8s.io"]
-  resources: ["leases"]
-  verbs: ["get","create","update"]
+  - apiGroups: ["observatory.seventh-horizon.io"]
+    resources:
+      [
+        "observatoryruns",
+        "observatoryruns/status",
+        "observatoryruns/finalizers",
+      ]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "create", "update"]

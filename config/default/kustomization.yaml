@@ -4,12 +4,12 @@ kind: Kustomization
 namespace: observatory-system
 
 resources:
-- ../crd
-- ../rbac
-- ../manager
-- ../webhook
-- ../certmanager
+  - ../crd
+  - ../rbac
+  - ../manager
+  - ../webhook # <-- add this
+  - ../certmanager # <-- add this because the patch injects a cert from cert-manager
 
-patchesStrategicMerge:
-- manager_webhook_patch.yaml
-- webhookcainjection_patch.yaml
+patches:
+  - path: manager_webhook_patch.yaml
+  - path: webhookcainjection_patch.yaml

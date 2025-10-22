@@ -3,22 +3,22 @@
 **Version:** v1.0.0-hardened  
 **Generated:** 2025-10-09T18:05:56.752299Z  
 **Artifact:** `release_hardened.zip`  
-**SHA256:** `142176630eed3cbbcf5543eba11c9e47b0dc77a0e5cf082fb2e7fee7e78689d2`  
+**SHA256:** `142176630eed3cbbcf5543eba11c9e47b0dc77a0e5cf082fb2e7fee7e78689d2`
 
 ---
 
 ## ✅ Current Operational State
 
-| Subsystem | Status | Notes |
-|------------|---------|-------|
-| **Build System** | ✔ Stable | Reproducible from clean environment |
-| **Proof Chain** | ✔ Complete | SHA + provenance match confirmed |
-| **Manifest + Provenance** | ✔ Auditor-ready | Schema strictness and SoT verified |
-| **Attestation Flow** | ⚙ Optional | `make attest` available but key not yet linked |
-| **Extras / Hardening** | ✔ Applied | Streaming extractor, LF enforcement, gzip os-byte clamp |
-| **Verification Harness** | ✔ Passes | `verify-patches.sh` static + smoke checks succeed |
-| **Packaging** | ✔ Deterministic ZIP | Created and checksummed in `/out/` |
-| **PromptCert Integration** | ⚙ Planned | Placeholder references exist; module pending inclusion |
+| Subsystem                  | Status               | Notes                                                   |
+| -------------------------- | -------------------- | ------------------------------------------------------- |
+| **Build System**           | ✔ Stable            | Reproducible from clean environment                     |
+| **Proof Chain**            | ✔ Complete          | SHA + provenance match confirmed                        |
+| **Manifest + Provenance**  | ✔ Auditor-ready     | Schema strictness and SoT verified                      |
+| **Attestation Flow**       | ⚙ Optional          | `make attest` available but key not yet linked          |
+| **Extras / Hardening**     | ✔ Applied           | Streaming extractor, LF enforcement, gzip os-byte clamp |
+| **Verification Harness**   | ✔ Passes            | `verify-patches.sh` static + smoke checks succeed       |
+| **Packaging**              | ✔ Deterministic ZIP | Created and checksummed in `/out/`                      |
+| **PromptCert Integration** | ⚙ Planned           | Placeholder references exist; module pending inclusion  |
 
 ---
 
@@ -46,4 +46,4 @@ The pipeline meets or exceeds **SLSA L4** reproducibility practices.
 
 ---
 
-*Generated automatically via GPT-5 project instrumentation.*
+_Generated automatically via GPT-5 project instrumentation._

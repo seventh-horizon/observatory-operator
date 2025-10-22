@@ -1,0 +1,51 @@
+# Git
+.git
+.gitignore
+.github
+
+# Documentation
+*.md
+!README.md
+docs/
+
+# Tests
+tests/
+controllers/*_test.go
+
+# Build artifacts
+bin/
+dist/
+out/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Temporary files
+*.tmp
+.temp/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+venv/
+ENV/
+env/
+
+# Tools
+tools/
+
+# Samples
+config/samples/
+
+# Release artifacts
+*.zip
+*.sha256

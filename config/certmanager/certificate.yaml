@@ -17,5 +17,5 @@ spec:
   issuerRef:
     name: observatory-selfsigned-issuer
   dnsNames:
-  - observatory-webhook-service.observatory-system.svc
-  - observatory-webhook-service.observatory-system.svc.cluster.local
+    - observatory-webhook-service.observatory-system.svc
+    - observatory-webhook-service.observatory-system.svc.cluster.local

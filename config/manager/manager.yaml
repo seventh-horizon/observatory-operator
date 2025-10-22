@@ -17,26 +17,26 @@ spec:
     spec:
       serviceAccountName: observatory-controller
       containers:
-      - name: manager
-        image: observatory-operator:latest
-        imagePullPolicy: IfNotPresent
-        command:
-        - /manager
-        ports:
-        - containerPort: 9443
-          name: webhook-server
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8081
-        readinessProbe:
-          httpGet:
-            path: /readyz
-            port: 8081
-        resources:
-          limits:
-            cpu: 500m
-            memory: 512Mi
-          requests:
-            cpu: 100m
-            memory: 128Mi
+        - name: manager
+          image: observatory-operator:dev
+          imagePullPolicy: IfNotPresent
+          command:
+            - /manager
+          ports:
+            - containerPort: 9443
+              name: webhook-server
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi

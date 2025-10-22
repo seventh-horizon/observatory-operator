@@ -1,0 +1,118 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: observatory-controller-alerts
+  namespace: observatory-system
+  labels:
+    control-plane: controller-manager
+spec:
+  groups:
+    - name: observatory-controller.rules
+      interval: 30s
+      rules:
+        # SLO: 99.9% of reconciliations should complete within 60s
+        - alert: ObservatoryHighReconciliationLatency
+          expr: |
+            histogram_quantile(0.999, 
+              rate(observatory_reconcile_duration_seconds_bucket[5m])
+            ) > 60
+          for: 10m
+          labels:
+            severity: warning
+            slo: latency
+          annotations:
+            summary: "Observatory reconciliation latency is high"
+            description: "99.9th percentile reconciliation latency is {{ $value }}s (threshold: 60s)"
+
+        # SLO: Less than 1% error rate over 5 minutes
+        - alert: ObservatoryHighErrorRate
+          expr: |
+            (
+              sum(rate(observatory_reconcile_errors_total[5m]))
+              /
+              sum(rate(observatory_reconcile_total[5m]))
+            ) > 0.01
+          for: 5m
+          labels:
+            severity: warning
+            slo: availability
+          annotations:
+            summary: "Observatory has high error rate"
+            description: "Error rate is {{ $value | humanizePercentage }} (threshold: 1%)"
+
+        # Critical: Job creation failures
+        - alert: ObservatoryJobCreationFailing
+          expr: |
+            rate(observatory_job_create_errors_total[5m]) > 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Observatory cannot create Kubernetes Jobs"
+            description: "Job creation is failing at {{ $value }} errors/sec"
+
+        # Warning: High retry rate
+        - alert: ObservatoryHighRetryRate
+          expr: |
+            sum(rate(observatory_workflow_retries_total[10m])) > 0.5
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Observatory workflow retry rate is elevated"
+            description: "Retry rate is {{ $value }} retries/sec over 10 minutes"
+
+        # Info: Workflow duration anomaly
+        - alert: ObservatoryWorkflowSlowdown
+          expr: |
+            (
+              avg_over_time(observatory_workflow_duration_seconds[5m])
+              /
+              avg_over_time(observatory_workflow_duration_seconds[1h] offset 1h)
+            ) > 2.0
+          for: 15m
+          labels:
+            severity: info
+          annotations:
+            summary: "Observatory workflows are running slower than usual"
+            description: "Current average duration is {{ $value }}x the historical average"
+
+        # Critical: Controller not reconciling
+        - alert: ObservatoryControllerDown
+          expr: |
+            absent(up{job="observatory-controller-metrics"}) == 1
+            or
+            rate(observatory_reconcile_total[5m]) == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Observatory controller is not reconciling"
+            description: "No reconciliation activity detected for 5 minutes"
+
+        # Warning: Job execution timeout rate
+        - alert: ObservatoryJobTimeouts
+          expr: |
+            (
+              sum(rate(observatory_job_timeout_total[10m]))
+              /
+              sum(rate(observatory_job_completed_total[10m]))
+            ) > 0.05
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High rate of job timeouts"
+            description: "{{ $value | humanizePercentage }} of jobs are timing out (threshold: 5%)"
+
+        # Critical: Webhook validation errors
+        - alert: ObservatoryWebhookFailures
+          expr: |
+            rate(observatory_webhook_errors_total[5m]) > 0.1
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Observatory webhook is rejecting requests"
+            description: "Webhook error rate: {{ $value }} errors/sec"
