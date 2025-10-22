@@ -1,0 +1,50 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: manager-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods/status
+  verbs:
+  - get
+- apiGroups:
+  - workflow.seventh-horizon.io
+  resources:
+  - observatories
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - workflow.seventh-horizon.io
+  resources:
+  - observatories/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - workflow.seventh-horizon.io
+  resources:
+  - observatories/status
+  verbs:
+  - get
+  - patch
+  - update

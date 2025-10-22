@@ -1,0 +1,48 @@
+apiVersion: workflow.seventh-horizon.io/v1alpha1
+kind: Observatory
+metadata:
+  labels:
+    app.kubernetes.io/name: observatory
+    app.kubernetes.io/instance: observatory-sample
+    app.kubernetes.io/part-of: observatory-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: observatory-operator
+  name: observatory-sample
+spec:
+  # Example of a simple DAG workflow with 3 tasks
+  # Task 1 runs first, then Task 2 and Task 3 run in parallel after Task 1 completes
+  tasks:
+    - name: task-1
+      image: busybox:1.36
+      command: ["sh", "-c"]
+      args: ["echo 'Task 1 starting' && sleep 5 && echo 'Task 1 completed'"]
+      env:
+        - name: TASK_ID
+          value: "1"
+    
+    - name: task-2
+      image: busybox:1.36
+      command: ["sh", "-c"]
+      args: ["echo 'Task 2 starting (depends on task-1)' && sleep 3 && echo 'Task 2 completed'"]
+      dependencies:
+        - task-1
+      env:
+        - name: TASK_ID
+          value: "2"
+    
+    - name: task-3
+      image: busybox:1.36
+      command: ["sh", "-c"]
+      args: ["echo 'Task 3 starting (depends on task-1)' && sleep 3 && echo 'Task 3 completed'"]
+      dependencies:
+        - task-1
+      env:
+        - name: TASK_ID
+          value: "3"
+  
+  # Optional: Schedule the workflow to run periodically
+  # schedule: "0 */6 * * *"  # Every 6 hours
+  
+  # Control workflow execution
+  suspend: false
+  maxConcurrent: 10

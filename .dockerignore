@@ -1,0 +1,27 @@
+# More info: https://docs.docker.com/engine/reference/builder/#dockerignore-file
+# Ignore build and test binaries.
+bin/
+testbin/
+*.test
+
+# Ignore CI/CD and version control
+.git/
+.github/
+.gitignore
+
+# Ignore documentation
+*.md
+docs/
+
+# Ignore IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Ignore test coverage files
+*.out
+coverage.*
+*.coverprofile
+profile.cov
