@@ -105,3 +105,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 -
+
+- docs(otel): move cloud export examples to examples/cloud-exports.yaml
+- chore: tighten controller comment (keep code concise)
