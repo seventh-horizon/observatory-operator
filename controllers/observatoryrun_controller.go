@@ -226,9 +226,7 @@ func (r *ObservatoryRunReconciler) derivePhase(run *observatoryv1alpha1.Observat
 		return observatoryv1alpha1.PhaseSucceeded
 	}
 
-	// If at least one task has started (Running or Succeeded) or there are active Jobs,
-	// the run is considered Running. This covers the case where some tasks are still
-	// Pending due to dependencies while others have started.
+	// Consider run "Running" once any task starts; "Pending" only if none have.
 	if running > 0 || succeeded > 0 {
 		return observatoryv1alpha1.PhaseRunning
 	}
