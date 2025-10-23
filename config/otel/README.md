@@ -213,3 +213,6 @@ service:
 - [OTEL Collector Documentation](https://opentelemetry.io/docs/collector/)
 - [Prometheus Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/prometheusreceiver)
 - [Available Exporters](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter)
+
+See cloud export examples in `config/otel/examples/cloud-exports.yaml`.
+
