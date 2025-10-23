@@ -1,0 +1,21 @@
+# Example: export to cloud backends (copy snippets into your collector-config.yaml as needed)
+
+# Google Cloud
+# googlecloud:
+#   project: your-gcp-project
+#   metric:
+#     prefix: observatory
+
+# AWS CloudWatch
+# awscloudwatch:
+#   region: us-east-1
+#   namespace: Observatory
+
+# Azure Monitor
+# azuremonitor:
+#   instrumentation_key: your-key
+
+# Datadog
+# datadog:
+#   api:
+#     key: ${DATADOG_API_KEY}
