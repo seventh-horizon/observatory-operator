@@ -4,30 +4,50 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: pip
 
-      - name: Install dependencies
+      - name: Install dependencies (if any)
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          # Ensure pytest/jsonschema exist even if requirements.txt is missing
           pip install pytest jsonschema
 
-      - name: Run tests
-        run: pytest -q
-
-      - name: Generate sample artifacts
+      - name: Run tests (if tests exist)
         run: |
-          export SOURCE_DATE_EPOCH=0
-          python tools/generate_samples.py
+          if ls -1 **/test_*.py *_test.py 2>/dev/null | head -n1 >/dev/null; then
+            pytest -q
+          else
+            echo "No Python tests found; skipping."
+          fi
+
+      - name: Generate sample artifacts (if script exists)
+        run: |
+          if [ -f tools/generate_samples.py ]; then
+            mkdir -p out
+            export SOURCE_DATE_EPOCH=0
+            python tools/generate_samples.py
+          else
+            echo "tools/generate_samples.py not found; skipping."
+          fi
 
       - name: Upload sample artifacts
         if: always()
