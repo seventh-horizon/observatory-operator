@@ -62,3 +62,16 @@ kind-create:
 .PHONY: run-example-simple ## Run sample
 run-example-simple:
 	kubectl apply -f config/samples/simple-workflow.yaml
+
+.PHONY: test validate-good validate-bad
+
+test: ## Run unit tests for validator
+	go test ./internal/validation -v
+
+validate-good: ## Validate a known-good sample
+	go run ./cmd/validate --root . ./sampledata/sample_event.json
+
+validate-bad: ## Validate a known-bad sample (intentionally fails, but make continues)
+	- go run ./cmd/validate --root . ./sampledata/sample_event_invalid.json || true
+
+	

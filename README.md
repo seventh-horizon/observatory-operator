@@ -1,4 +1,5 @@
 # Observatory Operator (Starter, with Webhook + Controller)
+![Telemetry Contract](https://github.com/seventh-horizon/observatory-operator/actions/workflows/telemetry.yml/badge.svg?branch=main)
 
 A minimal-but-functional Kubernetes operator that runs simple DAG-based workflows by creating Kubernetes Jobs per task. Includes:
 
@@ -42,3 +43,15 @@ kubectl get jobs
 - Invalid task names rejected
 
 See `config/samples/invalid-circular.yaml` for a quick test.
+
+## Developer Notes
+See: docs/DEVELOPER_NOTES.md
+
+
+## Developer Notes
+See: docs/DEVELOPER_NOTES.md
+
+
+## Developer Notes
+See: docs/DEVELOPER_NOTES.md
+

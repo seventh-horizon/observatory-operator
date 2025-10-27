@@ -1,0 +1,176 @@
+---
+# OpenTelemetry Collector Configuration for Observatory Operator
+# This configuration collects metrics, traces, and logs from the controller
+# and forwards them to various backends.
+
+receivers:
+  # Scrape Prometheus metrics from the controller
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: "observatory-controller"
+          scrape_interval: 30s
+          static_configs:
+            - targets: ["observatory-controller-metrics:8080"]
+              labels:
+                component: "controller"
+                environment: "production"
+
+  # Receive OTLP traces and metrics
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+  # Kubernetes events receiver
+  k8s_events:
+    namespaces: [observatory-system]
+
+processors:
+  # Batch telemetry for efficiency
+  batch:
+    timeout: 10s
+    send_batch_size: 1024
+
+  # Add resource attributes
+  resource:
+    attributes:
+      - key: service.name
+        value: observatory-operator
+        action: upsert
+      - key: service.version
+        value: 0.1.0
+        action: upsert
+      - key: deployment.environment
+        from_attribute: environment
+        action: upsert
+
+  # Memory limiter to prevent OOM
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+    spike_limit_mib: 128
+
+  # Filter out noisy metrics
+  filter/metrics:
+    metrics:
+      exclude:
+        match_type: regexp
+        metric_names:
+          - ".*test.*"
+          - ".*debug.*"
+
+  # Sample traces (keep 10% for high volume)
+  probabilistic_sampler:
+    sampling_percentage: 10.0
+
+  # Add metric attributes from resource
+  metricstransform:
+    transforms:
+      - include: observatory_.*
+        match_type: regexp
+        action: update
+        operations:
+          - action: add_label
+            new_label: operator
+            new_value: observatory
+
+exporters:
+  # Export to Prometheus (for local scraping)
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    namespace: observatory
+    const_labels:
+      cluster: production
+
+  # Export to Jaeger for traces
+  jaeger:
+    endpoint: jaeger-collector:14250
+    tls:
+      insecure: true
+
+  # Export to Loki for logs
+  loki:
+    endpoint: http://loki:3100/loki/api/v1/push
+    tenant_id: observatory
+    labels:
+      resource:
+        service.name: "service_name"
+        deployment.environment: "environment"
+
+  # Export to cloud backends (examples)
+  # Uncomment and configure as needed
+
+  # Google Cloud
+  # googlecloud:
+  #   project: your-gcp-project
+  #   metric:
+  #     prefix: observatory
+
+  # AWS CloudWatch
+  # awscloudwatch:
+  #   region: us-east-1
+  #   namespace: Observatory
+
+  # Azure Monitor
+  # azuremonitor:
+  #   instrumentation_key: your-key
+
+  # Datadog
+  # datadog:
+  #   api:
+  #     key: ${DATADOG_API_KEY}
+
+  # Debug exporter (stdout, for testing)
+  logging:
+    loglevel: info
+    sampling_initial: 5
+    sampling_thereafter: 200
+
+extensions:
+  # Health check endpoint
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+  # pprof for debugging
+  pprof:
+    endpoint: 0.0.0.0:1777
+
+  # zPages for live debugging
+  zpages:
+    endpoint: 0.0.0.0:55679
+
+service:
+  extensions: [health_check, pprof, zpages]
+
+  pipelines:
+    # Metrics pipeline
+    metrics:
+      receivers: [prometheus, otlp]
+      processors:
+        [memory_limiter, batch, resource, filter/metrics, metricstransform]
+      exporters: [prometheus, logging]
+      # Add cloud exporters here: [prometheus, googlecloud, logging]
+
+    # Traces pipeline
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, resource, probabilistic_sampler]
+      exporters: [jaeger, logging]
+      # Add cloud exporters here: [jaeger, googlecloud, logging]
+
+    # Logs pipeline
+    logs:
+      receivers: [otlp, k8s_events]
+      processors: [memory_limiter, batch, resource]
+      exporters: [loki, logging]
+      # Add cloud exporters here: [loki, awscloudwatch, logging]
+
+  telemetry:
+    logs:
+      level: info
+    metrics:
+      level: detailed
+      address: 0.0.0.0:8888

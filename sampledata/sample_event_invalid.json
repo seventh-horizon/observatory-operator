@@ -1,0 +1,6 @@
+{
+  "type": "telemetry.sample",
+  "version": "v1",
+  "ts": "2025-10-27T19:21:00Z",
+  "ui": { "fps_avg": 57 }
+}

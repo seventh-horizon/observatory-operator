@@ -1,0 +1,35 @@
+{
+  "type": "telemetry.sample",
+  "version": "v1",
+  "ts": "2025-10-27T19:21:00Z",
+  "source": "horizon-ui",
+  "ui": {
+    "fps_avg": 57,
+    "long_tasks": 2,
+    "long_task_max_ms": 84,
+    "input_latency_p95_ms": 42,
+    "cls_events": 1
+  },
+  "stability": {
+    "js_errors": 0,
+    "resource_fail_pct": 0,
+    "retries": 1,
+    "guardrail_trips": 0
+  },
+  "ux": {
+    "reduced_motion_respected": true,
+    "kb_interaction_pct": 0.34,
+    "a11y_violations": 0
+  },
+  "determinism": {
+    "snapshot_drift": 0,
+    "schema_mismatches": 0,
+    "tokens_hash_ok": true
+  },
+  "release": {
+    "pw_matrix_green": true,
+    "a11y_score": 0.96,
+    "perf_budget_ok": true
+  },
+  "tags": ["ui", "observatory", "cycle4"]
+}

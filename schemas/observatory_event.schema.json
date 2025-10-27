@@ -1,0 +1,124 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://seventh-horizon.dev/schemas/observatory_event.schema.json",
+  "title": "Observatory Telemetry Event (v1)",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "type": { "const": "telemetry.sample" },
+    "version": {
+      "type": "string",
+      "pattern": "^v1(\\.\\d+)?$",
+      "default": "v1"
+    },
+    "ts": { "type": "string", "format": "date-time" },
+    "source": { "type": "string", "minLength": 1 },
+
+    "ui": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fps_avg": { "type": "number", "minimum": 0 },
+        "long_tasks": { "type": "integer", "minimum": 0 },
+        "long_task_max_ms": { "type": "number", "minimum": 0 },
+        "input_latency_p95_ms": { "type": "number", "minimum": 0 },
+        "cls_events": { "type": "integer", "minimum": 0 }
+      }
+    },
+
+    "stability": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "js_errors": { "type": "integer", "minimum": 0 },
+        "resource_fail_pct": { "type": "number", "minimum": 0 },
+        "retries": { "type": "integer", "minimum": 0 },
+        "guardrail_trips": { "type": "integer", "minimum": 0 }
+      }
+    },
+
+    "ux": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "reduced_motion_respected": { "type": "boolean" },
+        "kb_interaction_pct": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "a11y_violations": { "type": "integer", "minimum": 0 }
+      }
+    },
+
+    "determinism": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "snapshot_drift": { "type": "integer", "minimum": 0 },
+        "schema_mismatches": { "type": "integer", "minimum": 0 },
+        "tokens_hash_ok": { "type": "boolean" }
+      }
+    },
+
+    "release": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "pw_matrix_green": { "type": "boolean" },
+        "a11y_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "perf_budget_ok": { "type": "boolean" }
+      }
+    },
+
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "maxItems": 16
+    }
+  },
+
+  "required": ["type", "version", "ts", "source"],
+
+  "examples": [
+    {
+      "type": "telemetry.sample",
+      "version": "v1",
+      "ts": "2025-10-27T19:21:00Z",
+      "source": "horizon-ui",
+      "ui": {
+        "fps_avg": 57,
+        "long_tasks": 2,
+        "long_task_max_ms": 84,
+        "input_latency_p95_ms": 42,
+        "cls_events": 1
+      },
+      "stability": {
+        "js_errors": 0,
+        "resource_fail_pct": 0,
+        "retries": 1,
+        "guardrail_trips": 0
+      },
+      "ux": {
+        "reduced_motion_respected": true,
+        "kb_interaction_pct": 0.34,
+        "a11y_violations": 0
+      },
+      "determinism": {
+        "snapshot_drift": 0,
+        "schema_mismatches": 0,
+        "tokens_hash_ok": true
+      },
+      "release": {
+        "pw_matrix_green": true,
+        "a11y_score": 0.96,
+        "perf_budget_ok": true
+      },
+      "tags": ["ui", "observatory", "cycle4"]
+    }
+  ]
+}
